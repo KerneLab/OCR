@@ -1,8 +1,10 @@
+from functools import reduce
+
 import cv2
 import numpy as np
 from numpy.linalg import norm
-from functools import reduce
-import matplotlib.pyplot as plt
+
+import FurthestApartPointsFinder
 
 
 def imshow(img, name=''):
@@ -12,55 +14,6 @@ def imshow(img, name=''):
     # plt.imshow(img), plt.title(name)
     # plt.xticks([]), plt.yticks([])
     # plt.show()
-
-
-def maxindex(coll):
-    """
-    返回集合中最大值的下标
-    """
-    return None if len(coll) == 0 else coll.index(max(coll))
-
-
-def minindex(coll):
-    """
-    返回集合中最小值的下标
-    """
-    return None if len(coll) == 0 else coll.index(min(coll))
-
-
-def findFurthestApartPoints(num, points, norm=np.linalg.norm):
-    vects = dict([(p, np.array(p)) for p in points])
-    dists = dict()
-    for a in points:
-        for b in points:
-            d = norm(vects[a] - vects[b])
-            dists[(a, b)] = d
-            dists[(b, a)] = d
-    apart = []  # 分离点
-    cache = dict()  # key点到其余分离点的距离之和
-    changed = True
-    while changed:
-        changed = False
-        for point in points:
-            if len(apart) < num:
-                apart.append(point)
-                changed = True
-                if len(apart) == num:
-                    for p in apart:
-                        cache[p] = sum([dists[(p, q)] for q in apart if q != p])
-            else:
-                if point not in cache:
-                    # 找出离当前节点a最近的现有b
-                    closest_idx = minindex([dists[(point, p)] for p in apart])
-                    closest = apart[closest_idx]
-                    tempsum = sum([dists[(point, q)] for q in apart if q != closest])
-                    # 如果a与其余点的距离和大于b到其余点的距离，则用a替换b
-                    if tempsum > cache[closest]:
-                        changed = True
-                        del cache[closest]
-                        cache[point] = tempsum
-                        apart[closest_idx] = point
-    return apart
 
 
 img_file = '../../img/20191228.png'
@@ -97,7 +50,7 @@ lineEnds = list(set([(end[0], end[1]) for end in leftLines] + [(end[2], end[3]) 
                     [(end[0], end[1]) for end in rightLines] + [(end[2], end[3]) for end in rightLines] +
                     [(end[0], end[1]) for end in bottomLines] + [(end[2], end[3]) for end in bottomLines]))
 
-aparts = findFurthestApartPoints(4, lineEnds)
+aparts = FurthestApartPointsFinder.find(4, lineEnds)
 
 img_frames = np.zeros((height, width, 3), np.uint8)
 for line in leftLines + topLines + rightLines + bottomLines:
