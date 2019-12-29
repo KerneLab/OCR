@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 from numpy.linalg import norm
 
+import Basis
 import FurthestApartPointsFinder
+import ConvexPointsConnector
 
 
 def imshow(img, name=''):
@@ -51,14 +53,31 @@ lineEnds = list(set([(end[0], end[1]) for end in leftLines] + [(end[2], end[3]) 
                     [(end[0], end[1]) for end in bottomLines] + [(end[2], end[3]) for end in bottomLines]))
 
 aparts = FurthestApartPointsFinder.find(4, lineEnds)
+corners = ConvexPointsConnector.connect(aparts)
+redress_height, redress_width = ConvexPointsConnector.rect_shape(corners)  # 矫正后的图像尺寸
+origin_corners = [(0, 0), (width, 0), (width, height), (0, height)]  # 源图像的矫正点
+redress_corners = [(0, 0), (redress_width, 0), (redress_width, redress_height), (0, redress_height)]  # 矫正图像的矫正点
+corners_map = dict(zip(origin_corners, redress_corners))
+# 获取源角点对应的源图中的角点，再映射成矫正图像中的角点
+redress = [corners_map[red] for red in ConvexPointsConnector.redress_rect_corners(corners, origin_corners)]
+margin = 5
+redress = list(map(lambda p: (p[0] + margin, p[1] + margin), redress))
+
+redress_transform = cv2.getPerspectiveTransform(np.array(corners, np.float32), np.array(redress, np.float32))
+
+real_height = int(redress_height + 2 * margin)
+real_width = int(redress_width + 2 * margin)
+img_redress = cv2.warpPerspective(img_adapt.copy(), redress_transform, (real_width, real_height))
+imshow(img_redress)
+cv2.imwrite('../../img/redress.png', img_redress)
 
 img_frames = np.zeros((height, width, 3), np.uint8)
 for line in leftLines + topLines + rightLines + bottomLines:
     x1, y1, x2, y2 = line
     cv2.line(img_frames, (x1, y1), (x2, y2), (255, 255, 255), 1)
 
-for apart in aparts:
-    cv2.circle(img_frames, apart, 5, (0, 0, 255), 2)
+for apart, color in dict(zip(corners, [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 0)])).items():
+    cv2.circle(img_frames, apart, 5, color, 2)
 
 imshow(img_frames)
 cv2.imwrite('../../img/frame.png', img_frames)
@@ -84,7 +103,5 @@ vertical = cv2.dilate(vertical, verticalStructure)
 # imshow(vertical)
 
 # imshow(cv2.bitwise_or(horizontal, vertical))
-cv2.imwrite('../../img/yyy.png', cv2.bitwise_or(horizontal, vertical))
 
 # imshow(cv2.bitwise_and(horizontal, vertical))
-cv2.imwrite('../../img/zzz.png', cv2.bitwise_and(horizontal, vertical))
