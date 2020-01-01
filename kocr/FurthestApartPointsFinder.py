@@ -25,13 +25,16 @@ def find(number, points, norm=np.linalg.norm):
             else:
                 if point not in cache:
                     # 找出离当前节点a最近的现有b
-                    closest_idx = Basis.minindex([dists[(point, p)] for p in apart])
-                    closest = apart[closest_idx]
-                    tempsum = sum([dists[(point, q)] for q in apart if q != closest])
-                    # 如果a与其余点的距离和大于b到其余点的距离，则用a替换b
-                    if tempsum > cache[closest]:
-                        changed = True
-                        del cache[closest]
-                        cache[point] = tempsum
-                        apart[closest_idx] = point
+                    temp = [(p, cache[p], sum([dists[(point, q)] for q in apart if q != p])) for p in apart]
+                    temp.sort(key=lambda p: p[2] - p[1], reverse=True)
+                    for p, old, new in temp:
+                        # 如果现有apart集合中存在一个点p，使得给定point到apart点(除p以外)的距离之和更大，则用point替换p点
+                        if new > old:
+                            changed = True
+                            idx = apart.index(p)
+                            del cache[p]
+                            cache[point] = new
+                            apart[idx] = point
+                            break
+
     return apart

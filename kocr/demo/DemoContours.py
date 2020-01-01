@@ -18,7 +18,8 @@ def imshow(img, name=''):
     # plt.show()
 
 
-img_file = '../../img/20191228.png'
+# img_file = '../../img/20191228.png'
+img_file = '../../img/20200101.png'
 # img_file = '../../img/201912082029.png'
 img_origin = cv2.imread(img_file, cv2.IMREAD_GRAYSCALE)
 # imshow(img_origin, '')
@@ -54,6 +55,18 @@ lineEnds = list(set([(end[0], end[1]) for end in leftLines] + [(end[2], end[3]) 
 
 aparts = FurthestApartPointsFinder.find(4, lineEnds)
 corners = ConvexPointsConnector.connect(aparts)
+
+img_frames = np.zeros((height, width, 3), np.uint8)
+for line in leftLines + topLines + rightLines + bottomLines:
+    x1, y1, x2, y2 = line
+    cv2.line(img_frames, (x1, y1), (x2, y2), (255, 255, 255), 1)
+
+for apart, color in dict(zip(corners, [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 0)])).items():
+    cv2.circle(img_frames, apart, 5, color, 2)
+
+imshow(img_frames)
+cv2.imwrite('../../img/frame.png', img_frames)
+
 redress_height, redress_width = ConvexPointsConnector.rect_shape(corners)  # 矫正后的图像尺寸
 origin_corners = [(0, 0), (width, 0), (width, height), (0, height)]  # 源图像的矫正点
 redress_corners = [(0, 0), (redress_width, 0), (redress_width, redress_height), (0, redress_height)]  # 矫正图像的矫正点
@@ -70,17 +83,6 @@ real_width = int(redress_width + 2 * margin)
 img_redress = cv2.warpPerspective(img_adapt.copy(), redress_transform, (real_width, real_height))
 imshow(img_redress)
 cv2.imwrite('../../img/redress.png', img_redress)
-
-img_frames = np.zeros((height, width, 3), np.uint8)
-for line in leftLines + topLines + rightLines + bottomLines:
-    x1, y1, x2, y2 = line
-    cv2.line(img_frames, (x1, y1), (x2, y2), (255, 255, 255), 1)
-
-for apart, color in dict(zip(corners, [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 0)])).items():
-    cv2.circle(img_frames, apart, 5, color, 2)
-
-imshow(img_frames)
-cv2.imwrite('../../img/frame.png', img_frames)
 
 scale = 10.0
 
