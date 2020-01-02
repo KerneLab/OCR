@@ -64,7 +64,7 @@ for line in leftLines + topLines + rightLines + bottomLines:
 for apart, color in dict(zip(corners, [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 0)])).items():
     cv2.circle(img_frames, apart, 5, color, 2)
 
-imshow(img_frames)
+# imshow(img_frames)
 cv2.imwrite('../../img/frame.png', img_frames)
 
 redress_height, redress_width = ConvexPointsConnector.rect_shape(corners)  # 矫正后的图像尺寸
@@ -81,12 +81,12 @@ redress_transform = cv2.getPerspectiveTransform(np.array(corners, np.float32), n
 real_height = int(redress_height + 2 * margin)
 real_width = int(redress_width + 2 * margin)
 img_redress = cv2.warpPerspective(img_adapt.copy(), redress_transform, (real_width, real_height))
-imshow(img_redress)
+# imshow(img_redress)
 cv2.imwrite('../../img/redress.png', img_redress)
 
 scale = 10.0
 
-horizontal = img_depict.copy()
+horizontal = img_redress.copy()
 # imshow(horizontal)
 horizontalSize = int(width / scale)
 horizontalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontalSize, 1))
@@ -95,7 +95,7 @@ horizontal = cv2.erode(horizontal, horizontalStructure)
 horizontal = cv2.dilate(horizontal, horizontalStructure)
 # imshow(horizontal)
 
-vertical = img_depict.copy()
+vertical = img_redress.copy()
 # imshow(vertical)
 verticalSize = int(height / scale)
 verticalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, verticalSize))
@@ -105,5 +105,14 @@ vertical = cv2.dilate(vertical, verticalStructure)
 # imshow(vertical)
 
 # imshow(cv2.bitwise_or(horizontal, vertical))
+imshow(cv2.bitwise_and(horizontal, vertical))
 
-# imshow(cv2.bitwise_and(horizontal, vertical))
+cross_point = cv2.bitwise_and(horizontal, vertical)
+cross_point_idx = np.where(cross_point > 0)
+img_cross = img_redress.copy()
+for a, b in zip(cross_point_idx[1], cross_point_idx[0]):
+    cv2.circle(img_cross, (a, b), 5, (255, 255, 255), 2)
+imshow(img_cross)
+
+for k, v in Basis.clustering_points(zip(cross_point_idx[1], cross_point_idx[0]), 5).items():
+    print(k, v)
