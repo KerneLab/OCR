@@ -19,8 +19,8 @@ def imshow(img, name=''):
 
 
 # img_file = '../../img/20191228.png'
-img_file = '../../img/20200101.png'
-# img_file = '../../img/201912082029.png'
+# img_file = '../../img/20200101.png'
+img_file = '../../img/201912082029.png'
 img_origin = cv2.imread(img_file, cv2.IMREAD_GRAYSCALE)
 # imshow(img_origin, '')
 (height, width) = img_origin.shape
@@ -39,7 +39,7 @@ leftX, topY, rightX, bottomY = reduce(lambda a, b: [min(a[0], b[0]), min(a[1], b
                                       rawLineEnds)
 
 # 获取与边界范围沾边的直线，即直线的一端在边界上
-boundThick = 2
+boundThick = 5
 leftLines = [end for end in rawLineEnds if abs(end[0] - leftX) <= boundThick] + \
             [end for end in rawLineEnds if abs(end[2] - leftX) <= boundThick]
 topLines = [end for end in rawLineEnds if abs(end[1] - topY) <= boundThick] + \
@@ -109,10 +109,8 @@ imshow(cv2.bitwise_and(horizontal, vertical))
 
 cross_point = cv2.bitwise_and(horizontal, vertical)
 cross_point_idx = np.where(cross_point > 0)
-img_cross = img_redress.copy()
-for a, b in zip(cross_point_idx[1], cross_point_idx[0]):
-    cv2.circle(img_cross, (a, b), 5, (255, 255, 255), 2)
-imshow(img_cross)
-
+img_cross = np.zeros(img_redress.shape, np.uint8)
 for k, v in Basis.clustering_points(zip(cross_point_idx[1], cross_point_idx[0]), 5).items():
-    print(k, v)
+    cv2.circle(img_cross, k, 5, (255, 255, 255))
+imshow(img_cross)
+cv2.imwrite('../../img/cross.png', img_cross)

@@ -22,6 +22,10 @@ def clustering_points(points, maxgap, norm=np.linalg.norm):
                 cluster[i].append(point)
             else:
                 cluster[point] = [point]
+    for k, v in cluster.items():
+        x, y = center_point(v)
+        del cluster[k]
+        cluster[(int(x), int(y))] = v
     return cluster
 
 
