@@ -20,7 +20,9 @@ def imshow(img, name=''):
 
 # img_file = '../../img/20191228.png'
 # img_file = '../../img/20200101.png'
-img_file = '../../img/201912082029.png'
+img_file = '../../img/20200105.png'
+# img_file = '../../img/201912082029.png'
+# img_file = '../../img/201912182116.png'
 img_origin = cv2.imread(img_file, cv2.IMREAD_GRAYSCALE)
 # imshow(img_origin, '')
 (height, width) = img_origin.shape
@@ -30,8 +32,8 @@ img_inverse = cv2.bitwise_not(img_origin)
 img_adapt = cv2.adaptiveThreshold(img_inverse, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, -2)
 imshow(img_adapt)
 
-img_depict = img_adapt.copy()
-rawLines = cv2.HoughLinesP(img_depict, 1, np.pi / 180, 200, minLineLength=30, maxLineGap=10)
+img_depict_raw = img_adapt.copy()
+rawLines = cv2.HoughLinesP(img_depict_raw, 1, np.pi / 180, 200, minLineLength=30, maxLineGap=10)
 rawLineEnds = [line[0] for line in rawLines]
 
 # 定位最大边界的上下左右范围
@@ -48,12 +50,12 @@ rightLines = [end for end in rawLineEnds if abs(end[0] - rightX) <= boundThick] 
              [end for end in rawLineEnds if abs(end[2] - rightX) <= boundThick]
 bottomLines = [end for end in rawLineEnds if abs(end[1] - bottomY) <= boundThick] + \
               [end for end in rawLineEnds if abs(end[3] - bottomY) <= boundThick]
-lineEnds = list(set([(end[0], end[1]) for end in leftLines] + [(end[2], end[3]) for end in leftLines] +
-                    [(end[0], end[1]) for end in topLines] + [(end[2], end[3]) for end in topLines] +
-                    [(end[0], end[1]) for end in rightLines] + [(end[2], end[3]) for end in rightLines] +
-                    [(end[0], end[1]) for end in bottomLines] + [(end[2], end[3]) for end in bottomLines]))
+lineEndsPoint = list(set([(end[0], end[1]) for end in leftLines] + [(end[2], end[3]) for end in leftLines] +
+                         [(end[0], end[1]) for end in topLines] + [(end[2], end[3]) for end in topLines] +
+                         [(end[0], end[1]) for end in rightLines] + [(end[2], end[3]) for end in rightLines] +
+                         [(end[0], end[1]) for end in bottomLines] + [(end[2], end[3]) for end in bottomLines]))
 
-aparts = FurthestApartPointsFinder.find(4, lineEnds)
+aparts = FurthestApartPointsFinder.find(4, lineEndsPoint)
 corners = ConvexPointsConnector.connect(aparts)
 
 img_frames = np.zeros((height, width, 3), np.uint8)
@@ -64,7 +66,7 @@ for line in leftLines + topLines + rightLines + bottomLines:
 for apart, color in dict(zip(corners, [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 0)])).items():
     cv2.circle(img_frames, apart, 5, color, 2)
 
-# imshow(img_frames)
+imshow(img_frames)
 cv2.imwrite('../../img/frame.png', img_frames)
 
 redress_height, redress_width = ConvexPointsConnector.rect_shape(corners)  # 矫正后的图像尺寸
@@ -84,11 +86,10 @@ img_redress = cv2.warpPerspective(img_adapt.copy(), redress_transform, (real_wid
 # imshow(img_redress)
 cv2.imwrite('../../img/redress.png', img_redress)
 
-scale = 10.0
-
 horizontal = img_redress.copy()
+horizontal_scale = 10.0
 # imshow(horizontal)
-horizontalSize = int(width / scale)
+horizontalSize = int(width / horizontal_scale)
 horizontalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontalSize, 1))
 horizontal = cv2.erode(horizontal, horizontalStructure)
 # imshow(horizontal)
@@ -96,21 +97,25 @@ horizontal = cv2.dilate(horizontal, horizontalStructure)
 # imshow(horizontal)
 
 vertical = img_redress.copy()
+vertical_scale = 10.0
 # imshow(vertical)
-verticalSize = int(height / scale)
+verticalSize = int(height / vertical_scale)
 verticalStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, verticalSize))
 vertical = cv2.erode(vertical, verticalStructure)
 # imshow(vertical)
 vertical = cv2.dilate(vertical, verticalStructure)
 # imshow(vertical)
 
-# imshow(cv2.bitwise_or(horizontal, vertical))
-imshow(cv2.bitwise_and(horizontal, vertical))
+imshow(cv2.bitwise_or(horizontal, vertical))
+cv2.imwrite('../../img/bit_or.png', cv2.bitwise_or(horizontal, vertical))
+# imshow(cv2.bitwise_and(horizontal, vertical))
+# TODO 交叉点 与 角点 取并集
+cv2.imwrite('../../img/bit_and.png', cv2.bitwise_and(horizontal, vertical))
 
 cross_point = cv2.bitwise_and(horizontal, vertical)
 cross_point_idx = np.where(cross_point > 0)
-img_cross = np.zeros(img_redress.shape, np.uint8)
+img_cross = img_redress.copy()
 for k, v in Basis.clustering_points(zip(cross_point_idx[1], cross_point_idx[0]), 5).items():
     cv2.circle(img_cross, k, 5, (255, 255, 255))
-imshow(img_cross)
+# imshow(img_cross)
 cv2.imwrite('../../img/cross.png', img_cross)
