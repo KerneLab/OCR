@@ -19,8 +19,8 @@ def imshow(img, name=''):
 
 
 # img_file = '../../img/20191228.png'
-# img_file = '../../img/20200101.png'
-img_file = '../../img/20200105.png'
+img_file = '../../img/20200101.png'
+# img_file = '../../img/20200105.png'
 # img_file = '../../img/201912082029.png'
 # img_file = '../../img/201912182116.png'
 img_origin = cv2.imread(img_file, cv2.IMREAD_GRAYSCALE)
@@ -83,10 +83,15 @@ redress_transform = cv2.getPerspectiveTransform(np.array(corners, np.float32), n
 real_height = int(redress_height + 2 * margin)
 real_width = int(redress_width + 2 * margin)
 img_redress = cv2.warpPerspective(img_adapt.copy(), redress_transform, (real_width, real_height))
-# imshow(img_redress)
-cv2.imwrite('../../img/redress.png', img_redress)
+img_redress_origin = cv2.warpPerspective(img_origin.copy(), redress_transform, (real_width, real_height))
+# imshow(img_redress_origin)
+cv2.imwrite('../../img/redress.png', img_redress_origin)
 
-horizontal = img_redress.copy()
+img_redress_inverse = cv2.bitwise_not(img_redress_origin)
+img_redress_adapt = cv2.adaptiveThreshold(img_redress_inverse, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15,
+                                          -2)
+
+horizontal = img_redress_adapt.copy()
 horizontal_scale = 10.0
 # imshow(horizontal)
 horizontalSize = int(width / horizontal_scale)
@@ -96,7 +101,7 @@ horizontal = cv2.erode(horizontal, horizontalStructure)
 horizontal = cv2.dilate(horizontal, horizontalStructure)
 # imshow(horizontal)
 
-vertical = img_redress.copy()
+vertical = img_redress_adapt.copy()
 vertical_scale = 10.0
 # imshow(vertical)
 verticalSize = int(height / vertical_scale)
@@ -113,9 +118,31 @@ cv2.imwrite('../../img/bit_or.png', cv2.bitwise_or(horizontal, vertical))
 cv2.imwrite('../../img/bit_and.png', cv2.bitwise_and(horizontal, vertical))
 
 cross_point = cv2.bitwise_and(horizontal, vertical)
-cross_point_idx = np.where(cross_point > 0)
-img_cross = img_redress.copy()
-for k, v in Basis.clustering_points(zip(cross_point_idx[1], cross_point_idx[0]), 5).items():
+cross_ys, cross_xs = np.where(cross_point > 0)
+img_cross = img_redress_adapt.copy()
+for k, v in Basis.clustering_points(zip(cross_xs, cross_ys), 5).items():
+    print(k)
     cv2.circle(img_cross, k, 5, (255, 255, 255))
 # imshow(img_cross)
 cv2.imwrite('../../img/cross.png', img_cross)
+
+# split_xs = []
+# cross_sort_xs = np.sort(cross_xs)
+# i = 0
+# for j in range(len(cross_sort_xs) - 1):
+#     if cross_sort_xs[j + 1] - cross_sort_xs[j] > 10:
+#         split_xs.append(cross_sort_xs[j])
+#     i = i + 1
+# split_xs.append(cross_sort_xs[i])
+#
+# split_ys = []
+# cross_sort_ys = np.sort(cross_ys)
+# i = 0
+# for j in range(len(cross_sort_ys) - 1):
+#     if cross_sort_ys[j + 1] - cross_sort_ys[j] > 10:
+#         split_ys.append(cross_sort_ys[j])
+#     i = i + 1
+# split_ys.append(cross_sort_ys[i])
+#
+# for x, y in zip(split_xs, split_ys):
+#     print(x, y)
