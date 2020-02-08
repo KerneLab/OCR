@@ -1,5 +1,5 @@
 import numpy as np
-import Basis
+from kocr import Basis
 
 
 def find(number, points, norm=np.linalg.norm):
