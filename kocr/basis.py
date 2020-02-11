@@ -27,8 +27,25 @@ def clustering_points(points, max_gap,
     for g, s in cluster.items():
         c = center_point(s)
         del cluster[g]
-        cluster[tuple([ center_trans(i) for i in list(c)])] = s
+        cluster[tuple([center_trans(i) for i in list(c)])] = s
     return cluster
+
+
+def dict_get(d, key, default):
+    if key not in d:
+        res = default()
+        d[key] = res
+        return res
+    else:
+        return d[key]
+
+
+def groupby(coll, key):
+    res = {}
+    for e in coll:
+        k = key(e)
+        dict_get(res, k, lambda: []).append(e)
+    return res
 
 
 def maxindex(coll):
