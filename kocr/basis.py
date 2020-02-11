@@ -9,23 +9,25 @@ def center_point(points):
     return tuple([sum([p[d] for p in points]) / size for d in range(dims)])
 
 
-def clustering_points(points, maxgap, norm=np.linalg.norm):
+def clustering_points(points, max_gap,
+                      norm=np.linalg.norm,
+                      center_trans=lambda x: int(round(x))):
     cluster = dict()
     for point in points:
         if len(cluster) == 0:
             cluster[point] = [point]
         else:
             temp = [(i, min([norm(np.array(point) - np.array(p)) for p in group])) for i, group in cluster.items()]
-            temp.sort(key=lambda x: x[1])
+            temp.sort(key=lambda d: d[1])
             i, dist = temp[0]
-            if dist <= maxgap:
+            if dist <= max_gap:
                 cluster[i].append(point)
             else:
                 cluster[point] = [point]
-    for k, v in cluster.items():
-        x, y = center_point(v)
-        del cluster[k]
-        cluster[(int(x), int(y))] = v
+    for g, s in cluster.items():
+        c = center_point(s)
+        del cluster[g]
+        cluster[tuple([ center_trans(i) for i in list(c)])] = s
     return cluster
 
 

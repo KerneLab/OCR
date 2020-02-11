@@ -1,5 +1,5 @@
 import numpy as np
-from kocr import Basis
+from kocr import basis
 
 
 def connect(points, norm=np.linalg.norm):
@@ -11,7 +11,7 @@ def connect(points, norm=np.linalg.norm):
         if last is None:
             curr = rest.pop()
         else:
-            curr = rest.pop(Basis.minindex([norm(np.array(last) - np.array(p)) for p in rest]))
+            curr = rest.pop(basis.minindex([norm(np.array(last) - np.array(p)) for p in rest]))
         last = curr
         path.append(last)
     return path
@@ -40,7 +40,7 @@ def redress_rect_corners(corners, targets, norm=np.linalg.norm):
     输入矩形的角点列表与目标矫正点集合，返回源角点对应的矫正坐标列表
     """
     source_corners = list(map(
-        lambda target: corners[Basis.minindex([norm(np.array(target) - np.array(p)) for p in corners])],
+        lambda target: corners[basis.minindex([norm(np.array(target) - np.array(p)) for p in corners])],
         targets))  # 寻找离矫正点最近的源点
     mapper = dict(zip(source_corners, targets))
     return [mapper[p] for p in corners]
