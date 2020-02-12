@@ -4,9 +4,9 @@ import cv2
 import numpy as np
 from numpy.linalg import norm
 
-import Basis
-import FurthestApartPointsFinder
-import ConvexPointsConnector
+from kocr import basis
+from kocr import FurthestApartPointsFinder
+from kocr import ConvexPointsConnector
 
 
 def imshow(img, name=''):
@@ -120,7 +120,7 @@ cv2.imwrite('../../img/bit_and.png', cv2.bitwise_and(horizontal, vertical))
 cross_point = cv2.bitwise_and(horizontal, vertical)
 cross_ys, cross_xs = np.where(cross_point > 0)
 img_cross = img_redress_adapt.copy()
-for k, v in Basis.clustering_points(zip(cross_xs, cross_ys), 5).items():
+for k, v in basis.clustering_points(zip(cross_xs, cross_ys), 5).items():
     print(k)
     cv2.circle(img_cross, k, 5, (255, 255, 255))
 # imshow(img_cross)
