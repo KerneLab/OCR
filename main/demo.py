@@ -24,11 +24,12 @@ frame_h, frame_v = core.outline_frame(img_gray)
 
 img_cross = img_gray.copy()
 cross_points = core.cross_points(frame_h, frame_v)
-for p in cross_points:
-    cv2.circle(img_cross, p, 5, (0, 0, 255))
+# for p in cross_points:
+#     cv2.circle(img_cross, p, 5, (0, 0, 255))
 # core.imshow(img_cross)
 
-core.imshow(cv2.bitwise_or(frame_h, frame_v))
+frame_lines = core.merge_lines(cv2.bitwise_or(frame_h, frame_v), 200)
+print(frame_lines)
 
 regions_dir = img_file_raw + ".region"
 if os.path.exists(regions_dir):

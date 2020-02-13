@@ -12,7 +12,7 @@ def center_point(points):
 def clustering_points(points, max_gap,
                       norm=np.linalg.norm,
                       center_trans=lambda x: int(round(x))):
-    cluster = dict()
+    cluster = {}
     for point in points:
         if len(cluster) == 0:
             cluster[point] = [point]
@@ -40,12 +40,62 @@ def dict_get(d, key, default):
         return d[key]
 
 
+def dist_point_line(point, line,
+                    is_line_segment=True,
+                    norm=np.linalg.norm):
+    p = np.array(point)
+    a, b = [np.array(end) for end in line]
+    ab = b - a
+    ap = p - a
+    d = norm(ab)
+    r = 0 if d == 0 else ab.dot(ap) / (d ** 2)
+    ac = r * ab
+    if is_line_segment:
+        if r <= 0:
+            return norm(ap)
+        elif r >= 1:
+            return norm(p - b)
+        else:
+            return norm(ap - ac)
+    else:
+        return norm(ap - ac)
+
+
+def flatten(coll):
+    flat = []
+    for e in coll:
+        flat.extend(e)
+    return flat
+
+
 def groupby(coll, key):
     res = {}
     for e in coll:
         k = key(e)
         dict_get(res, k, lambda: []).append(e)
     return res
+
+
+def group_reverse_map(group_res,
+                      value=lambda v: v, key=lambda k: k):
+    """
+    Convert
+    {
+        k1:[u1,u2,...],
+        k2:[v1,v2,...],
+        ...
+    }
+    To
+    {
+        u1:k1,
+        u2:k1,
+        ...,
+        v1:k2,
+        v2:k2,
+        ...
+    }
+    """
+    return dict([(value(v), key(g)) for g, l in group_res.items() for v in l])
 
 
 def maxindex(coll):
@@ -62,6 +112,10 @@ def minindex(coll):
     return None if len(coll) == 0 else coll.index(min(coll))
 
 
-if __name__ == "__main__":
-    ps = [(1, 2), (1, 3)]
-    print(center_point(ps))
+def sort(coll, key=lambda x: x, reverse=False):
+    coll.sort(key=key, reverse=reverse)
+    return coll
+
+
+if __name__ == '__main__':
+    print(flatten([[1, 2], [], [5]]))

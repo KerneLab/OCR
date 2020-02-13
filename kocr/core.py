@@ -7,10 +7,10 @@ from kocr import basis
 
 def align_points(points):
     xs, ys = np.hsplit(np.array(points), 2)
-    xm = dict([(u[0], g[0]) for g, s in basis.clustering_points([(x[0],) for x in xs.tolist()], max_gap=5).items()
-               for u in s])
-    ym = dict([(v[0], g[0]) for g, s in basis.clustering_points([(y[0],) for y in ys.tolist()], max_gap=5).items()
-               for v in s])
+    xg = basis.clustering_points([(x[0],) for x in xs.tolist()], max_gap=5)
+    xm = basis.group_reverse_map(xg, lambda v: v[0], lambda k: k[0])
+    yg = basis.clustering_points([(y[0],) for y in ys.tolist()], max_gap=5)
+    ym = basis.group_reverse_map(yg, lambda v: v[0], lambda k: k[0])
     return [(xm[point[0]], ym[point[1]]) for point in points]
 
 
@@ -31,15 +31,21 @@ def detect_text(img):
     return detect.detect_image(img)
 
 
-def find_lines(img_color):
-    img_gray = cv2.bitwise_not(cv2.cvtColor(img_color, cv2.COLOR_RGB2GRAY))
-    rawLines = cv2.HoughLinesP(img_gray, 1, np.pi / 180, 200, minLineLength=30, maxLineGap=10)
-
-
 def imshow(img, name=''):
     cv2.imshow(name, img)
     cv2.waitKey(0)
     cv2.destroyWindow(name)
+
+
+def merge_lines(img_lines, threshold,
+                min_line_length=30, max_line_gap=10):
+    raw_lines = cv2.HoughLinesP(img_lines, 1, np.pi / 180, threshold, minLineLength=min_line_length,
+                                maxLineGap=max_line_gap)
+    lines = [basis.sort([(line[0][0], line[0][1]), (line[0][2], line[0][3])]) for line in raw_lines]
+    ends = set(basis.flatten(lines))
+    ends_map = basis.group_reverse_map(basis.clustering_points(ends, 5))
+    merged_set = set([(ends_map[line[0]], ends_map[line[1]]) for line in lines])
+    return [[line[0], line[1]] for line in merged_set]
 
 
 def outline_frame(img_gray, horizontal_scale=10.0, vertical_scale=10.0):
