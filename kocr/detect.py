@@ -87,7 +87,7 @@ def detect_image(image):
             scores = textsegs[:, 0]
             textsegs = textsegs[:, 1:5]
 
-            textdetector = TextDetector(DETECT_MODE='O')
+            textdetector = TextDetector(DETECT_MODE='H')  # H/O
             boxes = textdetector.detect(textsegs, scores[:, np.newaxis], img.shape[:2])
             boxes = [box[:8] for box in boxes]
             boxes = [[box[0] / rw, box[1] / rh,

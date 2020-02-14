@@ -47,9 +47,15 @@ def Perspective_transform(box, original_img):
 
 
 if __name__ == "__main__":
-    input_dir = "../../img/201912082029.png"
+    # input_dir = "../../img/201912082029.png"
+    input_dir = "../../img/011.png"
     original_img, gray_img, RedThresh, closed, opened = Img_Outline(input_dir)
+
     box, draw_img = findContours_img(original_img, opened)
+    cv2.imshow("draw_img", draw_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     result_img = Perspective_transform(box, original_img)
     # cv2.imshow("original", original_img)
     # cv2.imshow("gray", gray_img)

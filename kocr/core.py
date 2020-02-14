@@ -22,34 +22,42 @@ def cross_points(frame_h, frame_v):
 
 
 def cut_region(image, region, margin_v=0, margin_h=0):
-    margin_x = min(int((region[2] - region[0]) / 2), margin_h)
-    margin_y = min(int((region[5] - region[3]) / 2), margin_v)
-    return image[(region[3] + margin_y):(region[5] - margin_y), (region[0] + margin_x):(region[2] - margin_x)]
+    """
+    Cut sub image according to the given region,
+    return the sub image and its left-top point
+    """
+    margin_x = max(min(int((region[2] - region[0]) / 2), margin_h), 0)
+    margin_y = max(min(int((region[5] - region[3]) / 2), margin_v), 0)
+    x1, x2 = region[0] + margin_x, region[2] - margin_x
+    y1, y2 = region[3] + margin_y, region[5] - margin_y
+    cut = image[y1:y2, x1:x2]
+    return cut, (x1, y1)
 
 
 def detect_text(img):
     return detect.detect_image(img)
 
 
-def imshow(img, name=''):
-    cv2.imshow(name, img)
-    cv2.waitKey(0)
-    cv2.destroyWindow(name)
-
-
 def merge_lines(img_lines, threshold,
                 min_line_length=30, max_line_gap=10):
-    raw_lines = cv2.HoughLinesP(img_lines, 1, np.pi / 180, threshold, minLineLength=min_line_length,
-                                maxLineGap=max_line_gap)
+    """
+    Merge lines by ends clustering
+    """
+    raw_lines = cv2.HoughLinesP(img_lines, 1, np.pi / 180, threshold,
+                                minLineLength=min_line_length, maxLineGap=max_line_gap)
     lines = [basis.sort([(line[0][0], line[0][1]), (line[0][2], line[0][3])]) for line in raw_lines]
     ends = set(basis.flatten(lines))
     ends_map = basis.group_reverse_map(basis.clustering_points(ends, 5))
-    merged_set = set([(ends_map[line[0]], ends_map[line[1]]) for line in lines])
-    return [[line[0], line[1]] for line in merged_set]
+    merged_set = set([tuple(basis.sort([ends_map[line[0]], ends_map[line[1]]])) for line in lines])
+    return [(line[0], line[1]) for line in merged_set]
 
 
-def outline_frame(img_gray, horizontal_scale=10.0, vertical_scale=10.0):
+def outline_frame(img_gray, border_thickness,
+                  horizontal_scale=10.0, vertical_scale=10.0):
     (height, width) = img_gray.shape
+
+    dilate_structure = cv2.getStructuringElement(cv2.MORPH_RECT, (border_thickness, border_thickness))
+    erode_structure = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
 
     # 勾勒横向直线
     horizontal = img_gray.copy()
@@ -57,6 +65,8 @@ def outline_frame(img_gray, horizontal_scale=10.0, vertical_scale=10.0):
     horizontal_structure = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
     horizontal = cv2.erode(horizontal, horizontal_structure)
     horizontal = cv2.dilate(horizontal, horizontal_structure)
+    horizontal = cv2.dilate(horizontal, dilate_structure)
+    horizontal = cv2.erode(horizontal, erode_structure)
 
     # 勾勒纵向直线
     vertical = img_gray.copy()
@@ -64,8 +74,14 @@ def outline_frame(img_gray, horizontal_scale=10.0, vertical_scale=10.0):
     vertical_structure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
     vertical = cv2.erode(vertical, vertical_structure)
     vertical = cv2.dilate(vertical, vertical_structure)
+    vertical = cv2.dilate(vertical, dilate_structure)
+    vertical = cv2.erode(vertical, erode_structure)
 
     return horizontal, vertical
+
+
+def point_nearby_lines(point, lines, max_dist):
+    return set([line for line in lines if basis.dist_point_line(point, line) <= max_dist])
 
 
 def prepare_gray(img_color):
@@ -85,33 +101,41 @@ def remove_stamp(color_image, min_threshold=210, target_channel=2):
     return nostamp
 
 
-def split_region(points):
+def split_region(cross_points, point_lines):
     # 按行遍历交点
-    points.sort(key=lambda p: (p[1], p[0]))
+    cross_points.sort(key=lambda p: (p[1], p[0]))
 
-    xm = basis.groupby(points, lambda p: p[0])
+    xm = basis.groupby(cross_points, lambda p: p[0])
     for k, v in xm.items():
         xm[k] = [p[1] for p in v]
 
-    ym = basis.groupby(points, lambda p: p[1])
+    ym = basis.groupby(cross_points, lambda p: p[1])
     for k, v in ym.items():
         ym[k] = [p[0] for p in v]
 
-    ps = set(points)
+    ps = set(cross_points)
 
     regions = []
-    for point in points:
-        x, y = point
+    for a in cross_points:
+        x, y = a
+        b, c, d = None, None, None
         zp = None
         for v in [v for v in xm[x] if v > y]:
+            d = (x, v)
             for u in [u for u in ym[y] if u > x]:
-                if (u, v) in ps:
-                    zp = (u, v)
+                b = (u, y)
+                c = (u, v)
+                if c in ps \
+                        and len(point_lines[a].intersection(point_lines[b])) > 0 \
+                        and len(point_lines[b].intersection(point_lines[c])) > 0 \
+                        and len(point_lines[c].intersection(point_lines[d])) > 0 \
+                        and len(point_lines[d].intersection(point_lines[a])) > 0:
+                    zp = c
                     break
             if zp is not None:
                 break
         if zp is not None:
-            region = [x, y, u, y, u, v, x, v]
+            region = [a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]]
             regions.append(region)
 
     return regions

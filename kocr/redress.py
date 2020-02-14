@@ -1,16 +1,26 @@
 import numpy as np
 import cv2
 from functools import reduce
+from kocr import basis
 from kocr import ConvexPointsConnector
 from kocr import FurthestApartPointsFinder
 
 
-def redress_by_corner(img_color, bound_thickness=5, margin=0):
+def redress_by_corner(img_color, threshold=500, bound_thickness=5, margin=0):
     img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
     (height, width) = img_gray.shape
     img_depict = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, -2)
-    depict_lines = cv2.HoughLinesP(img_depict, 1, np.pi / 180, 200, minLineLength=30, maxLineGap=10)
+    depict_lines = cv2.HoughLinesP(img_depict, 1, np.pi / 180, threshold, minLineLength=30, maxLineGap=0)
     line_ends = [line[0] for line in depict_lines]
+
+    # img_lines = np.zeros(img_gray.shape)
+    # for line in depict_lines:
+    #     cv2.line(img_lines, tuple(line[0][0:2]), tuple(line[0][2:4]), (255, 255, 255), thickness=1)
+    # basis.imshow(img_lines)
+    # cv2.imwrite('img/lines.png', img_lines)
+    # contours, hierarchy = cv2.findContours(img_depict, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # cv2.drawContours(img_lines, contours, -1, (255, 255, 255), 3)
+    # basis.imshow(img_lines)
 
     # 定位最大边界的上下左右范围
     left_x, top_y, right_x, bottom_y = reduce(

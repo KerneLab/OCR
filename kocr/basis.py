@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 
 def center_point(points):
@@ -96,6 +97,12 @@ def group_reverse_map(group_res,
     }
     """
     return dict([(value(v), key(g)) for g, l in group_res.items() for v in l])
+
+
+def imshow(img, name=''):
+    cv2.imshow(name, img)
+    cv2.waitKey(0)
+    cv2.destroyWindow(name)
 
 
 def maxindex(coll):
