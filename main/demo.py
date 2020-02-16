@@ -56,13 +56,14 @@ for region in regions:
     cv2.polylines(img_region, [np.array(region).astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 0, 255),
                   thickness=1)
     img_sub, leftop = core.cut_region(img_redress, region, 3, 3)
+    cv2.imwrite(regions_dir + '/' + region_id + '.png', img_sub)
     boxes = core.detect_text(img_sub)
     for box in boxes:
-        cv2.polylines(img_sub, [box[:8].astype(np.int32).reshape((-1, 1, 2))], True, color=(0, 0, 255),
-                      thickness=1)
+        # cv2.polylines(img_sub, [box[:8].astype(np.int32).reshape((-1, 1, 2))], True, color=(0, 0, 255),
+        #               thickness=1)
         cv2.polylines(img_redress, [box[:8].astype(np.int32).reshape((-1, 1, 2)) + leftop], True, color=(0, 0, 255),
                       thickness=1)
-    cv2.imwrite(regions_dir + '/' + region_id + '.png', img_sub)
+        print(core.recognize_text_box(img_sub, basis.polygon_to_box(box)))
 cv2.imwrite(base_dir + 'img/regions.png', img_region)
 cv2.imwrite(base_dir + 'img/redress.png', img_redress)
 
