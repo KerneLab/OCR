@@ -1,8 +1,9 @@
 import numpy as np
 import cv2
-from kocr import detect
-from kocr import redress
 from kocr import basis
+from kocr import redress
+from kocr import detect
+from kocr import ocr
 
 
 def align_points(points):
@@ -87,6 +88,10 @@ def point_nearby_lines(point, lines, max_dist):
 def prepare_gray(img_color):
     img_gray = cv2.bitwise_not(cv2.cvtColor(img_color, cv2.COLOR_RGB2GRAY))
     return cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, -2)
+
+
+def recognize_text_box(image, box):
+    return ocr.recognize_box(image, box)
 
 
 def redress_table(img):

@@ -119,6 +119,11 @@ def minindex(coll):
     return None if len(coll) == 0 else coll.index(min(coll))
 
 
+def polygon_to_box(polygon):
+    print(polygon)
+    return (polygon[0], polygon[3], polygon[4], polygon[7])
+
+
 def sort(coll, key=lambda x: x, reverse=False):
     coll.sort(key=key, reverse=reverse)
     return coll
